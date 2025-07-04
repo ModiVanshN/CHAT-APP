@@ -1,9 +1,9 @@
-![image](https://github.com/user-attachments/assets/ae962f07-4b0c-4a70-94d9-c67c41a35bb0)# 💬 Live Chat App
+### 💬 Live Chat App
 
 A full-stack real-time chat application featuring private messaging, emoji support, file sharing, authentication, and email notifications. Built with **React (Vite)** on the frontend and **Node.js, Express, and MongoDB** on the backend, using **Socket.io** for real-time communication.
 
 ---
-
+![image](https://github.com/user-attachments/assets/ae962f07-4b0c-4a70-94d9-c67c41a35bb0)
 ## ⚙️ Tech Stack
 
 ### 🔧 Backend
