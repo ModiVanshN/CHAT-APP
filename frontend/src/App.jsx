@@ -1,4 +1,3 @@
-
 import './App.css'
 import { Routes,Route } from 'react-router-dom'
 import Home from './pages/Home'
@@ -16,23 +15,22 @@ import NotFoundpage from './pages/NotFoundpage';
 function App() {
 
   return (
-      <SocketStates ENDPOINT="http://localhost:4000">
+    <SocketStates ENDPOINT="https://chat-app-znyk.onrender.com">
       <ChatState>
         <MessageState>
-     <UserState>
-      <ToastContainer />
-    <div className="app ">
-      <Routes>
-        <Route path="/" element={<ProtectedRoute Component={Home}/>}/>
-        <Route path="/login" element={<Login/>}/>
-         <Route path="/chat" element={<ProtectedRoute Component={Chatpage}/>}/>
-
-        <Route path="*" element={<NotFoundpage/>}/>
-      </Routes>
-    </div>
-    </UserState>
-    </MessageState>
-    </ChatState>
+          <UserState>
+            <ToastContainer />
+            <div className="app">
+              <Routes>
+                <Route path="/" element={<ProtectedRoute Component={Home}/>}/>
+                <Route path="/login" element={<Login/>}/>
+                <Route path="/chat" element={<ProtectedRoute Component={Chatpage}/>}/>
+                <Route path="*" element={<NotFoundpage/>}/>
+              </Routes>
+            </div>
+          </UserState>
+        </MessageState>
+      </ChatState>
     </SocketStates>
   )
 }
