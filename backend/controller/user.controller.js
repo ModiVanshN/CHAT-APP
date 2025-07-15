@@ -2,34 +2,25 @@ import User from "../models/user.model.js";
 import { AsyncHandler } from "../utils/asynchandler.js";
 import { ApiError } from "../utils/Apierror.js";
 import { ApiResponse } from "../utils/Apiresponse.js";
-import multiavatar from '@multiavatar/multiavatar/esm'
-
-
+import multiavatar from '@multiavatar/multiavatar/esm';
 
 const userRegister = AsyncHandler(async (req, res) => {
-  const { name, gender, userName, phonenumber, email, password } =
-    req.body;
+  const { name, gender, userName, phonenumber, email, password } = req.body;
 
   if (!name || !gender || !userName || !phonenumber || !email || !password) {
-    // throw new ApiError(400, "Please Fill All Fields.");
-    return res.status(400)
-              .json(new ApiResponse(409,null,"Please Fill All Fields."
-              ))
+    return res.status(400).json(new ApiResponse(400, null, "Please fill all fields."));
   }
+
   const existedUser = await User.findOne({
     $or: [{ email }, { phonenumber }, { userName }],
   });
 
   if (existedUser) {
-    // throw new ApiError(409, "User Already Registered please Login");
-    return res.status(409)
-              .json(new ApiResponse(409,null,"User Already Registered please Login"
-              ))
+    return res.status(409).json(new ApiResponse(409, null, "User already registered. Please login."));
   }
 
-  const svgCode = multiavatar(userName)
-   const base64Avatar = Buffer.from(svgCode).toString('base64');
-
+  const svgCode = multiavatar(userName);
+  const base64Avatar = Buffer.from(svgCode).toString('base64');
   const hashPassword = await User.hashPassword(password);
 
   const user = await User.create({
@@ -39,143 +30,102 @@ const userRegister = AsyncHandler(async (req, res) => {
     phonenumber,
     email,
     password: hashPassword,
-    avtar:  `data:image/svg+xml;base64,${base64Avatar}`, 
+    avtar: `data:image/svg+xml;base64,${base64Avatar}`,
   });
 
-  if (user) {
-    return res
-      .status(200)
-      .json(new ApiResponse(200, user, "User successfully Registered."));
-  } else {
-    throw new ApiError(400, "Invalid Data");
-  }
+  return res.status(200).json(new ApiResponse(200, user, "User successfully registered."));
 });
 
 const userLogin = AsyncHandler(async (req, res) => {
   const { phonenumber, email, password } = req.body;
 
   if ((!email && !phonenumber) || !password) {
-    // throw new ApiError(400, "Please provide email or phone and password.");
-     return res.status(400)
-              .json(new ApiResponse(400,null,"Please Fill All Fields."
-              ))
+    return res.status(400).json(new ApiResponse(400, null, "Please fill all fields."));
   }
 
-  let user;
-  if (email) {
-    user = await User.findOne({ email });
-  } else {
-    user = await User.findOne({ phonenumber });
-  }
+  const user = await User.findOne(email ? { email } : { phonenumber });
 
   if (!user) {
-    // throw new ApiError(401, "User Not Found!!");
-     return res.status(401)
-              .json(new ApiResponse(401,null,"User not Found! Please Login."
-              ))
+    return res.status(401).json(new ApiResponse(401, null, "User not found! Please register."));
   }
 
   const isCorrectPass = await user.comparePassword(password);
-
   if (!isCorrectPass) {
-    // throw new ApiError(400, "Incorrect password");
-     return res.status(400)
-              .json(new ApiResponse(400,null,"Incorrect password"
-              ))
+    return res.status(400).json(new ApiResponse(400, null, "Incorrect password"));
   }
-  
+
   const Authtoken = await user.generateAuthToken();
 
-  res.cookie("token", Authtoken, { httpOnly: true });
+  res.cookie("token", Authtoken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  });
 
   const loggedinUser = await User.findById(user._id).select("-password");
-  if (Authtoken) {
-    res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          { loggedinUser, Authtoken },
-          "User Successfully logged in"
-        )
-      );
-  } else {
-    throw new ApiError(504, "failed to generate token");
-  }
+
+  return res.status(200).json(
+    new ApiResponse(200, { loggedinUser, Authtoken }, "User successfully logged in.")
+  );
 });
 
 const getUser = AsyncHandler(async (req, res) => {
-  const user = req.user;
-  return res
-    .status(200)
-    .json(new ApiResponse(200, user, "User Fetched Succesfully"));
+  return res.status(200).json(new ApiResponse(200, req.user, "User fetched successfully."));
 });
 
 const userLogout = AsyncHandler(async (req, res) => {
   const token = req.cookies?.token;
   if (!token) {
-    throw new ApiError(400, "User Not Logged in !!!");
+    return res.status(400).json(new ApiResponse(400, null, "User not logged in."));
   }
 
   res.cookie("token", null, {
     httpOnly: true,
     expires: new Date(0),
-    sameSite: "lax",
-    path: "/",
     secure: true,
-    sameSite: "none"  
+    sameSite: "none",
+    path: "/"
   });
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, null, "User Logged Out Successfully ..."));
+  return res.status(200).json(new ApiResponse(200, null, "User logged out successfully."));
 });
 
 const updatePassword = AsyncHandler(async (req, res) => {
   const { oldpassword, newpassword } = req.body;
-
   const user = await User.findById(req.user?._id);
-  const isoldPassword = await user.comparePassword(oldpassword);
 
+  const isoldPassword = await user.comparePassword(oldpassword);
   if (!isoldPassword) {
-    throw new ApiError(400, "Invalid Password!");
+    return res.status(400).json(new ApiResponse(400, null, "Invalid current password"));
   }
-  const hashedPassword = await User.hashPassword(newpassword);
-  user.password = hashedPassword;
+
+  user.password = await User.hashPassword(newpassword);
   await user.save({ validateBeforeSave: false });
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, {}, "Password Changed Successfully..."));
+  return res.status(200).json(new ApiResponse(200, {}, "Password changed successfully."));
 });
 
 const uploadImage = AsyncHandler(async (req, res) => {
   if (!req.file) {
-    throw new ApiError(401, "Please first select file!");
+    return res.status(400).json(new ApiResponse(400, null, "Please upload a file."));
   }
 
   const imageUrl = `/Image/${req.file.filename}`;
-
   const user = await User.findByIdAndUpdate(
     req.user._id,
     { avtar: imageUrl },
     { new: true }
   );
+
   if (!user) {
-    // throw new ApiError(404, "User not found");
-    return res.status(404)
-              .json(new ApiResponse(404,null,"user not found!!"
-              ))
+    return res.status(404).json(new ApiResponse(404, null, "User not found."));
   }
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, { imageUrl, user }, "Image uploaded successfully")
-    );
+
+  return res.status(200).json(new ApiResponse(200, { imageUrl, user }, "Image uploaded successfully."));
 });
 
 const Alluser = AsyncHandler(async (req, res) => {
-  const keywords = req.query.search
+  const keyword = req.query.search
     ? {
         $or: [
           { name: { $regex: req.query.search, $options: "i" } },
@@ -184,14 +134,13 @@ const Alluser = AsyncHandler(async (req, res) => {
       }
     : {};
 
-  const users = await User.find(keywords)
+  const users = await User.find(keyword)
     .find({ _id: { $ne: req.user._id } })
     .select("-password");
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, users, "All contact fetched sucessdfully..."));
+  return res.status(200).json(new ApiResponse(200, users, "Contacts fetched successfully."));
 });
+
 export {
   userRegister,
   userLogin,
