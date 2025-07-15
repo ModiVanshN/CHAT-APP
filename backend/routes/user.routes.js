@@ -17,12 +17,12 @@ UserRoutes.post("/register",
 )
 UserRoutes.post("/login",
   [
-    body("email").isEmail().withMessage("please valid e-mai"),
-    body("phonenumber").isMobilePhone().withMessage("enter valid mobile number"),
-    body("password").isLength(8).withMessage("Password length should be minimum 6"),
+    body("email").isEmail().withMessage("Please enter a valid email"),
+    body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters")
   ],
   userLogin
 );
+
 
 UserRoutes.post("/logout",userLogout)
 UserRoutes.get("/getUser",Auth,getUser)
