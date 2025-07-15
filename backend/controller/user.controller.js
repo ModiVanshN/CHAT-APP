@@ -122,6 +122,8 @@ const userLogout = AsyncHandler(async (req, res) => {
     expires: new Date(0),
     sameSite: "lax",
     path: "/",
+    secure: true,
+    sameSite: "none"  
   });
 
   return res
