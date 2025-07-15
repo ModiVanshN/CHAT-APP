@@ -19,18 +19,24 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Allow both Vercel frontend & localhost for dev
+// ✅ CORS Config
 const allowedOrigins = [
   "https://chat-app-red-tau-45.vercel.app",
   "http://localhost:5173"
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
 
-// ✅ Same CORS config for Socket.io
+// ✅ Socket.io CORS
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -42,27 +48,27 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(cookieParser());
 
-// ✅ Static file handling
+// ✅ Static Assets
 app.use('/Image', express.static(path.join(path.resolve(), 'public', 'Image')));
 app.use('/media', express.static(path.join(path.resolve(), 'public', 'media')));
 
-// ✅ Basic test route
+// ✅ Test Route
 app.get("/", (req, res) => {
-  res.send("Hello Chatt!");
+  res.status(200).json({ message: "Hello from Chat Backend" });
 });
 
-// ✅ API Routes
+// ✅ Routes
 app.use("/api/ChatApp/user", userRouter);
 app.use("/api/ChatApp/message", messageRoutes);
 app.use("/api/ChatApp/Chat", ChatRoutes);
 
-// ✅ DB connection
+// ✅ Connect DB
 connectDB();
 mongoose.connect(process.env.DATABASE_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error(err));
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.error("❌ Mongo Error", err));
 
-// ✅ Socket.io event handling
+// ✅ Socket.io Handling
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
@@ -92,8 +98,8 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Start server
+// ✅ Start Server
 const port = process.env.PORT || 5000;
 server.listen(port, () => {
-  console.log(`App listening on port ${port}`);
+  console.log(`🚀 Server listening on port ${port}`);
 });
