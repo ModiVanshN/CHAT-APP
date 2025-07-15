@@ -22,7 +22,7 @@ const io = new Server(server, {
 });
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: 'https://chat-app-red-tau-45.vercel.app/', // ✅ replace with your actual Vercel URL
   credentials: true
 }));
 
