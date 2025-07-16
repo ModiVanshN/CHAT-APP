@@ -1,9 +1,11 @@
+// ✅ Updated user.controller.js with improved error handling and consistent JSON responses
+
 import User from "../models/user.model.js";
 import { AsyncHandler } from "../utils/asynchandler.js";
-import { ApiError } from "../utils/Apierror.js";
 import { ApiResponse } from "../utils/Apiresponse.js";
 import multiavatar from '@multiavatar/multiavatar/esm';
 
+// ✅ User Registration
 const userRegister = AsyncHandler(async (req, res) => {
   const { name, gender, userName, phonenumber, email, password } = req.body;
 
@@ -33,9 +35,10 @@ const userRegister = AsyncHandler(async (req, res) => {
     avtar: `data:image/svg+xml;base64,${base64Avatar}`,
   });
 
-  return res.status(200).json(new ApiResponse(200, user, "User successfully registered."));
+  return res.status(201).json(new ApiResponse(201, user, "User successfully registered."));
 });
 
+// ✅ User Login
 const userLogin = AsyncHandler(async (req, res) => {
   const { phonenumber, email, password } = req.body;
 
@@ -69,10 +72,12 @@ const userLogin = AsyncHandler(async (req, res) => {
   );
 });
 
+// ✅ Get Current User
 const getUser = AsyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, req.user, "User fetched successfully."));
 });
 
+// ✅ Logout
 const userLogout = AsyncHandler(async (req, res) => {
   const token = req.cookies?.token;
   if (!token) {
@@ -90,12 +95,13 @@ const userLogout = AsyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, null, "User logged out successfully."));
 });
 
+// ✅ Change Password
 const updatePassword = AsyncHandler(async (req, res) => {
   const { oldpassword, newpassword } = req.body;
   const user = await User.findById(req.user?._id);
 
-  const isoldPassword = await user.comparePassword(oldpassword);
-  if (!isoldPassword) {
+  const isOldPassword = await user.comparePassword(oldpassword);
+  if (!isOldPassword) {
     return res.status(400).json(new ApiResponse(400, null, "Invalid current password"));
   }
 
@@ -105,6 +111,7 @@ const updatePassword = AsyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, {}, "Password changed successfully."));
 });
 
+// ✅ Upload Profile Image
 const uploadImage = AsyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).json(new ApiResponse(400, null, "Please upload a file."));
@@ -124,6 +131,7 @@ const uploadImage = AsyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, { imageUrl, user }, "Image uploaded successfully."));
 });
 
+// ✅ Get All Users (for contacts, excluding self)
 const Alluser = AsyncHandler(async (req, res) => {
   const keyword = req.query.search
     ? {
